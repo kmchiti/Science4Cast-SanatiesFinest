@@ -22,7 +22,7 @@ class myargs:
         self.samples = 450000
         self.sampleLeaf = 3
         self.subsamples = 0.5
-        self.dataset = '../unsupervised_encoders/Science4Cast_data/CompetitionSet2017_3.pkl' #'CompetitionSet2017_3.pkl'
+        self.dataset = '../CompetitionSet2017_3.pkl' 
         self.borj2017 = 10  
         self.negRatio = 4
 args = myargs()
