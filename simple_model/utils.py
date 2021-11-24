@@ -18,9 +18,9 @@ def args_parser():
         '--dataset',
         type=str,
         default=
-        '../unsupervised_encoders/Science4Cast_data/CompetitionSet2017_3.pkl',
+        '../CompetitionSet2017_3.pkl',
         help=
-        'Path to .pkl data (default: ../unsupervised_encoders/Science4Cast_data/CompetitionSet2017_3.pkl)'
+        'Path to .pkl data (default: ../CompetitionSet2017_3.pkl)'
     )
 
     parser.add_argument('--bs',
