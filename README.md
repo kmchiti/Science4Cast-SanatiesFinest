@@ -1,4 +1,4 @@
-# EvolvGNN
+# Science4Cast-SanatiesFinest
 
 Scientific publications in field of AI can be viewed as an exponentially growing dynamic graph where vertices represent different concepts and each edge represents the first time two concepts got discussed and connected in a publication. Here, we demonstrate a model to predict future links in this graph based on basic and temporal properties of its vertices. We train various gradient boosting models on this data. Also, we employ dataset augmentation to make these models order-invariant. Finally, we post-process results of individual models to boost our final prediction. Our model won the 3rd place in the [Science4Cast](https://www.iarai.ac.at/science4cast/) competition.
 
