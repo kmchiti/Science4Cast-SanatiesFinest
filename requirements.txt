@@ -1,0 +1,11 @@
+numpy==1.19.5
+scipy==1.4.1
+matplotlib==3.2.2
+seaborn==0.11.2
+scikit_learn==0.23.1
+argparse==1.1
+tqdm==4.62.3
+networkx=2.6.3
+json==2.0.9
+wandb=0.12.7
+pandas==1.1.5
