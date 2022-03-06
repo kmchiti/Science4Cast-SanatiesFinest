@@ -18,7 +18,7 @@ def args_parser():
         '--dataset',
         type=str,
         default=
-        '../CompetitionSet2017_3.pkl',
+        '../SemanticGraph_delta_3_cutoff_0_minedge_1.pkl',
         help=
         'Path to .pkl data (default: ../CompetitionSet2017_3.pkl)'
     )

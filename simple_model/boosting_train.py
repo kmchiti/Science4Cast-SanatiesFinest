@@ -28,12 +28,12 @@ if __name__ == '__main__':
         if 'shp' not in args.features:
             args.features += '_shp'
 
-    wandb.init(project="unsipervised_features", entity='science4cast')
+    wandb.init(project="unsipervised_features", entity='science4cast', mode='disabled')
     wandb.config.update(args)
 
     wandb.run.name += '_4graphs'
 
-    full_dynamic_graph_sparse, unconnected_vertex_pairs, year_start, years_delta = pickle.load(
+    full_dynamic_graph_sparse, unconnected_vertex_pairs, pos_edge, year_start, years_delta, deg_cutoff, minedge = pickle.load(
         open(args.dataset, "rb"))
 
     graph_2014 = graph_year(full_dynamic_graph_sparse, 2014)
@@ -110,7 +110,9 @@ if __name__ == '__main__':
     model.fit(x_train, y_train)
     auc_test = roc_auc_score(y_test, model.predict_proba(x_test)[:, 1])
 
-    wandb.log({"SCORE": model.score(x_test, y_test), "AUC_test": auc_test})
+    score = {"SCORE": model.score(x_test, y_test), "AUC_test": auc_test}
+    wandb.log(score)
+    print(score)
 
     if auc_test < 0.9075:
         exit(-1)
@@ -143,3 +145,4 @@ if __name__ == '__main__':
 
     print("Solution stored as " + submit_file +
           ".\nLooking forward to your submission.")
+
