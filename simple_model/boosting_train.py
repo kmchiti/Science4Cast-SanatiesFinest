@@ -114,9 +114,6 @@ if __name__ == '__main__':
     wandb.log(score)
     print(score)
 
-    if auc_test < 0.9075:
-        exit(-1)
-
     # Submit File
     print('Submission file is generating...')
     submit_features = create_features(args,
