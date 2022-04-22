@@ -11,6 +11,7 @@ import pickle
 def CCPA(SP, CN, num_vertex, alpha=0.8):
     return (alpha * CN) + ((1 - alpha) * (num_vertex / SP))
 
+
 def args_parser():
     parser = argparse.ArgumentParser(description='Boosting on Graphs')
 
@@ -117,25 +118,6 @@ def args_parser():
     return args
 
 
-
-
-def graph_year2(fdg, year, borj2017):
-    NUM_OF_VERTICES = 64719
-
-    day_origin = date(1990, 1, 1)
-    day_curr = date(year, borj2017, 28)
-    all_edges_curr = fdg[fdg[:, 2] < (day_curr - day_origin).days]
-    adj_mat_sparse_curr = sparse.csr_matrix((np.ones(len(all_edges_curr)),
-                                             (all_edges_curr[:, 0],
-                                              all_edges_curr[:, 1])),
-                                            shape=(NUM_OF_VERTICES, NUM_OF_VERTICES))
-    print('Number of edges: ', adj_mat_sparse_curr.getnnz())
-
-    graph = nx.from_scipy_sparse_matrix(adj_mat_sparse_curr)
-
-    return graph
-
-
 def graph_year(fdg, year):
 
     "returns one slice of the graph (for a specific year)"
@@ -158,10 +140,9 @@ def graph_year(fdg, year):
     return graph
 
 
-def create_features(args, graph, graph1, graph2, graph3, vlist, use_case='train'):
+def create_features(args, graph, graph1, graph2, vlist, use_case='train', name=''):
 
-    features_file_name = 'submission_features_{}_4graphs.pickle'.format(
-        args.features)
+    features_file_name = 'submission_features_{}_4graphs_{}.pickle'.format(args.features, name)
 
     if use_case == 'submit':
         if os.path.exists(features_file_name):
@@ -172,25 +153,21 @@ def create_features(args, graph, graph1, graph2, graph3, vlist, use_case='train'
     deg = graph.degree()
     deg1 = graph1.degree()
     deg2 = graph2.degree()
-    deg3 = graph3.degree()
 
     if 'pr' in args.features:
         graph_pr = nx.pagerank(graph)
         graph1_pr = nx.pagerank(graph1)
         graph2_pr = nx.pagerank(graph2)
-        graph3_pr = nx.pagerank(graph3)
 
     if 'and' in args.features:
         graph_and = nx.average_neighbor_degree(graph)
         graph1_and = nx.average_neighbor_degree(graph1)
         graph2_and = nx.average_neighbor_degree(graph2)
-        graph3_and = nx.average_neighbor_degree(graph3)
 
     all_features = []
     e = 2 * graph.number_of_edges()
     e1 = 2 * graph1.number_of_edges()
     e2 = 2 * graph2.number_of_edges()
-    e3 = 2 * graph3.number_of_edges()
     for i, j in tqdm(vlist, desc="Edge feature computing {}".format(use_case)):
 
         # Baseline features (degrees)
@@ -204,17 +181,10 @@ def create_features(args, graph, graph1, graph2, graph3, vlist, use_case='train'
             deg2[i],
             deg2[j],
             deg2[i] + deg2[j],
-            deg3[i],
-            deg3[j],
-            deg3[i] + deg3[j],
 
             abs(deg1[i] + deg1[j] - (deg[i] + deg[j])),
             abs(deg1[i] + deg1[j] - (deg2[i] + deg2[j])),
             abs(deg[i] + deg[j] - (deg2[i] + deg2[j])),
-
-            abs(deg1[i] + deg1[j] - (deg3[i] + deg3[j])),
-            abs(deg3[i] + deg3[j] - (deg2[i] + deg2[j])),
-            abs(deg[i] + deg[j] - (deg3[i] + deg3[j]))
         ]
 
         if '_nd' in args.features:
@@ -224,8 +194,6 @@ def create_features(args, graph, graph1, graph2, graph3, vlist, use_case='train'
             nd1_j = deg1[j] / e1
             nd2_i = deg2[i] / e2
             nd2_j = deg2[j] / e2
-            nd3_i = deg3[i] / e3
-            nd3_j = deg3[j] / e3
 
             features.append(nd_i)
             features.append(nd_j)
@@ -236,50 +204,33 @@ def create_features(args, graph, graph1, graph2, graph3, vlist, use_case='train'
             features.append(nd2_i)
             features.append(nd2_j)
             features.append(nd2_i + nd2_j)
-            features.append(nd3_i)
-            features.append(nd3_j)
-            features.append(nd3_i + nd3_j)
 
             features.append(abs(nd1_i + nd1_j - (nd_i + nd_j)))
             features.append(abs(nd1_i + nd1_j - (nd2_i + nd2_j)))
             features.append(abs(nd_i + nd_j - (nd2_i + nd2_j)))
-
-            features.append(abs(nd1_i + nd1_j - (nd3_i + nd3_j)))
-            features.append(abs(nd3_i + nd3_j - (nd2_i + nd2_j)))
-            features.append(abs(nd3_i + nd3_j - (nd_i + nd_j)))
 
         # jacard
         if 'ja' in args.features:
             graph_ja = list(nx.jaccard_coefficient(graph, [(i, j)]))[0][2]
             graph1_ja = list(nx.jaccard_coefficient(graph1, [(i, j)]))[0][2]
             graph2_ja = list(nx.jaccard_coefficient(graph2, [(i, j)]))[0][2]
-            graph3_ja = list(nx.jaccard_coefficient(graph3, [(i, j)]))[0][2]
             features.append(graph_ja)
             features.append(graph1_ja)
             features.append(graph2_ja)
-            features.append(graph3_ja)
             features.append(abs(graph_ja - graph1_ja))
             features.append(abs(graph2_ja - graph1_ja))
             features.append(abs(graph_ja - graph2_ja))
-            features.append(abs(graph3_ja - graph1_ja))
-            features.append(abs(graph2_ja - graph3_ja))
-            features.append(abs(graph_ja - graph3_ja))
 
         if 'cn' in args.features:
             path2 = len(list(nx.common_neighbors(graph, i, j)))
             path2_1 = len(list(nx.common_neighbors(graph1, i, j)))
             path2_2 = len(list(nx.common_neighbors(graph2, i, j)))
-            path2_3 = len(list(nx.common_neighbors(graph3, i, j)))
             features.append(path2)
             features.append(path2_1)
             features.append(path2_2)
-            features.append(path2_3)
             features.append(abs(path2 - path2_1))
             features.append(abs(path2 - path2_2))
             features.append(abs(path2_1 - path2_2))
-            features.append(abs(path2 - path2_3))
-            features.append(abs(path2_3 - path2_2))
-            features.append(abs(path2_1 - path2_3))
 
         if 'shp' in args.features:
             try:
@@ -300,74 +251,47 @@ def create_features(args, graph, graph1, graph2, graph3, vlist, use_case='train'
             except:
                 shortest_path_2 = 100
 
-            try:
-                shortest_path_3 = len(
-                    nx.shortest_path(G=graph3, source=i, target=j))
-            except:
-                shortest_path_3 = 100
-
             features.append(shortest_path)
             features.append(shortest_path_1)
             features.append(shortest_path_2)
-            features.append(shortest_path_3)
 
             features.append(abs(shortest_path - shortest_path_1))
             features.append(abs(shortest_path_2 - shortest_path_1))
             features.append(abs(shortest_path_2 - shortest_path))
-
-            features.append(abs(shortest_path - shortest_path_3))
-            features.append(abs(shortest_path_3 - shortest_path_1))
-            features.append(abs(shortest_path_2 - shortest_path_3))
 
         if 'ccpa' in args.features:
             assert 'shp' in args.features and 'cn' in args.features, 'ERROR!'
             ccpa = CCPA(shortest_path, path2, graph.number_of_nodes())
             ccpa1 = CCPA(shortest_path_1, path2_1, graph1.number_of_nodes())
             ccpa2 = CCPA(shortest_path_2, path2_2, graph2.number_of_nodes())
-            ccpa3 = CCPA(shortest_path_3, path2_3, graph2.number_of_nodes())
             features.append(ccpa)
             features.append(ccpa1)
             features.append(ccpa2)
-            features.append(ccpa3)
             features.append(abs(ccpa1 - ccpa))
             features.append(abs(ccpa1 - ccpa2))
             features.append(abs(ccpa - ccpa2))
-
-            features.append(abs(ccpa1 - ccpa3))
-            features.append(abs(ccpa3 - ccpa2))
-            features.append(abs(ccpa - ccpa3))
 
         if 'pr' in args.features:
             pr = graph_pr[i] + graph_pr[j]
             pr1 = graph1_pr[i] + graph1_pr[j]
             pr2 = graph2_pr[i] + graph2_pr[j]
-            pr3 = graph3_pr[i] + graph3_pr[j]
             features.append(pr)
             features.append(pr1)
             features.append(pr2)
-            features.append(pr3)
             features.append(abs(pr - pr1))
             features.append(abs(pr2 - pr1))
             features.append(abs(pr2 - pr))
-            features.append(abs(pr - pr3))
-            features.append(abs(pr3 - pr1))
-            features.append(abs(pr2 - pr3))
 
         if 'and' in args.features:
             sum_avg_nei_deg = graph_and[i] + graph_and[j]
             sum_avg_nei_deg_1 = graph1_and[i] + graph1_and[j]
             sum_avg_nei_deg_2 = graph2_and[i] + graph2_and[j]
-            sum_avg_nei_deg_3 = graph3_and[i] + graph3_and[j]
             features.append(sum_avg_nei_deg)
             features.append(sum_avg_nei_deg_1)
             features.append(sum_avg_nei_deg_2)
-            features.append(sum_avg_nei_deg_3)
             features.append(abs(sum_avg_nei_deg - sum_avg_nei_deg_1))
             features.append(abs(sum_avg_nei_deg - sum_avg_nei_deg_2))
             features.append(abs(sum_avg_nei_deg_1 - sum_avg_nei_deg_2))
-            features.append(abs(sum_avg_nei_deg - sum_avg_nei_deg_3))
-            features.append(abs(sum_avg_nei_deg_3 - sum_avg_nei_deg_2))
-            features.append(abs(sum_avg_nei_deg_1 - sum_avg_nei_deg_3))
 
         if '_sadegh' in args.features:
             if 'and' not in args.features:

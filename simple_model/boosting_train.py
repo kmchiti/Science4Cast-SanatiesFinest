@@ -1,15 +1,9 @@
 import pickle
 import numpy as np
-from scipy import sparse
-import networkx as nx
-from datetime import date
-from scipy import sparse
-from datetime import date
 import json
 import os
-from tqdm import tqdm
 import wandb
-from utils import graph_year, args_parser, create_features, graph_year2
+from utils import graph_year, args_parser, create_features
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
@@ -28,41 +22,38 @@ if __name__ == '__main__':
         if 'shp' not in args.features:
             args.features += '_shp'
 
-    wandb.init(project="unsipervised_features", entity='science4cast', mode='disabled')
+    wandb.init(project="unsupervised_features_newdata", entity='science4cast', mode='disabled')
     wandb.config.update(args)
-
-    wandb.run.name += '_4graphs'
 
     full_dynamic_graph_sparse, unconnected_vertex_pairs, pos_edge, year_start, years_delta, deg_cutoff, minedge = pickle.load(
         open(args.dataset, "rb"))
 
-    graph_2014 = graph_year(full_dynamic_graph_sparse, 2014)
-    graph_2015 = graph_year(full_dynamic_graph_sparse, 2015)
-    graph_2016 = graph_year(full_dynamic_graph_sparse, 2016)
-    graph_2017_half = graph_year2(full_dynamic_graph_sparse, 2017,
-                                  args.borj2017)
-    graph_2017 = graph_year(full_dynamic_graph_sparse, 2017)
+    graph_2020 = graph_year(full_dynamic_graph_sparse, 2020)
+    graph_2020_delta = graph_year(full_dynamic_graph_sparse, 2020-years_delta)
+    graph_2020_delta_1 = graph_year(full_dynamic_graph_sparse, 2020-years_delta-1)
+    graph_2020_delta_2 = graph_year(full_dynamic_graph_sparse, 2020-years_delta-2)
+    graph_2020_2delta = graph_year(full_dynamic_graph_sparse, 2020-2*years_delta)
+    graph_2020_2delta_1 = graph_year(full_dynamic_graph_sparse, 2020-2*years_delta-1)
+    graph_2020_2delta_2 = graph_year(full_dynamic_graph_sparse, 2020-2*years_delta-2)
 
-    def positive_edge_extractor_2017(pandas_row):
-        return graph_2017.has_edge(pandas_row[0], pandas_row[1])
 
-    new_edge_2017 = [
-        i for i in graph_2017.edges if i not in graph_2017_half.edges
-    ]
+    def positive_edge_extractor(pandas_row):
+        return graph_2020_delta.has_edge(pandas_row[0], pandas_row[1])
+
 
     # Sample from edges!
     src = np.random.randint(0, NUM_OF_VERTICES,
-                            int(len(new_edge_2017) * args.negRatio))
+                            int(graph_2020 * args.negRatio))
     dest = np.random.randint(0, NUM_OF_VERTICES,
-                             int(len(new_edge_2017) * args.negRatio))
+                             int(graph_2020 * args.negRatio))
     random_edge_samples = np.array([src, dest]).T
 
-    new_edge_2017_pd = pd.DataFrame(new_edge_2017, columns=['srt', 'dest'])
+    new_edge_2017_pd = pd.DataFrame(graph_2020, columns=['srt', 'dest'])
 
     random_edge_samples_pd = pd.DataFrame(random_edge_samples,
                                           columns=['srt', 'dest'])
     random_neg_edge_samples_pd = random_edge_samples_pd[
-        random_edge_samples_pd.apply(positive_edge_extractor_2017,
+        random_edge_samples_pd.apply(positive_edge_extractor,
                                      axis=1) == False]
 
     dataset = np.array(
@@ -71,33 +62,20 @@ if __name__ == '__main__':
 
     dataset_idx = np.unique(np.random.randint(0, len(dataset), args.samples))
     dataset_samples = dataset[dataset_idx]
-    # dataset_samples_sym = np.concatenate(
-    #     [dataset_samples, dataset_samples[:, [1, 0]]], axis=0)
+
     dataset_samples_sym_pd = pd.DataFrame(dataset_samples,
                                           columns=['srt', 'dest'])
-    targets = np.array(
-        dataset_samples_sym_pd.apply(positive_edge_extractor_2017,
-                                     axis=1).astype(int))
-    X_train, X_test, y_train, y_test = train_test_split(
-        dataset_samples, targets)
-    X_train = np.unique(np.concatenate(
-        [X_train, X_train[:, [1, 0]]], axis=0), axis=0)
+    targets = np.array(dataset_samples_sym_pd.apply(positive_edge_extractor,axis=1).astype(int))
+    X_train, X_test, _, _ = train_test_split(dataset_samples, targets)
+    X_train = np.unique(np.concatenate([X_train, X_train[:, [1, 0]]], axis=0), axis=0)
 
-    X_test = np.unique(np.concatenate(
-    [X_test, X_test[:, [1, 0]]], axis=0), axis=0)
+    X_test = np.unique(np.concatenate([X_test, X_test[:, [1, 0]]], axis=0), axis=0)
 
-    y_train = np.array(
-        pd.DataFrame(X_train,
-                     columns=['srt', 'dest']).apply(positive_edge_extractor_2017, axis=1).astype(int))
-    y_test = np.array(
-        pd.DataFrame(X_test,
-                     columns=['srt', 'dest']).apply(positive_edge_extractor_2017, axis=1).astype(int))
+    y_train = np.array(pd.DataFrame(X_train, columns=['srt', 'dest']).apply(positive_edge_extractor, axis=1).astype(int))
+    y_test = np.array(pd.DataFrame(X_test, columns=['srt', 'dest']).apply(positive_edge_extractor, axis=1).astype(int))
 
-    x_train = np.array(
-        create_features(args, graph_2014, graph_2015, graph_2016, graph_2017_half,
-                        X_train))
-    x_test = np.array(
-        create_features(args, graph_2014, graph_2015, graph_2016, graph_2017_half, X_test))
+    x_train = np.array(create_features(args, graph_2020_2delta_2, graph_2020_2delta_1, graph_2020_2delta, X_train))
+    x_test = np.array(create_features(args, graph_2020_2delta_2, graph_2020_2delta_1, graph_2020_2delta, X_test))
 
     model = GradientBoostingClassifier(n_estimators=args.estimators,
                                        learning_rate=args.lr,
@@ -117,10 +95,9 @@ if __name__ == '__main__':
     # Submit File
     print('Submission file is generating...')
     submit_features = create_features(args,
-                                      graph_2014,
-                                      graph_2015,
-                                      graph_2016,
-                                      graph_2017,
+                                      graph_2020_delta_2,
+                                      graph_2020_delta_1,
+                                      graph_2020_delta,
                                       unconnected_vertex_pairs,
                                       use_case='submit')
 
