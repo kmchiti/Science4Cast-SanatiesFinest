@@ -107,12 +107,6 @@ def args_parser():
                         default=0.8,
                         help='subsample (default: 1.0)')
 
-    parser.add_argument('--borj2017',
-                        type=int,
-                        default=2,
-                        choices=[2, 4, 6, 8],
-                        help='borj of 2017 (default:2)')
-
     args = parser.parse_args()
 
     return args

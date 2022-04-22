@@ -43,12 +43,12 @@ if __name__ == '__main__':
 
     # Sample from edges!
     src = np.random.randint(0, NUM_OF_VERTICES,
-                            int(graph_2020 * args.negRatio))
+                            int(len(graph_2020_delta.edges) * args.negRatio))
     dest = np.random.randint(0, NUM_OF_VERTICES,
-                             int(graph_2020 * args.negRatio))
+                             int(len(graph_2020_delta.edges) * args.negRatio))
     random_edge_samples = np.array([src, dest]).T
 
-    new_edge_2017_pd = pd.DataFrame(graph_2020, columns=['srt', 'dest'])
+    new_edge_2020_delta_pd = pd.DataFrame(graph_2020_delta, columns=['srt', 'dest'])
 
     random_edge_samples_pd = pd.DataFrame(random_edge_samples,
                                           columns=['srt', 'dest'])
@@ -57,7 +57,7 @@ if __name__ == '__main__':
                                      axis=1) == False]
 
     dataset = np.array(
-        pd.concat([new_edge_2017_pd,
+        pd.concat([new_edge_2020_delta_pd,
                    random_neg_edge_samples_pd]).drop_duplicates())
 
     dataset_idx = np.unique(np.random.randint(0, len(dataset), args.samples))
