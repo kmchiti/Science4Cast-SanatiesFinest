@@ -48,7 +48,7 @@ if __name__ == '__main__':
                              int(len(graph_2020_delta.edges) * args.negRatio))
     random_edge_samples = np.array([src, dest]).T
 
-    new_edge_2020_delta_pd = pd.DataFrame(graph_2020_delta, columns=['srt', 'dest'])
+    new_edge_2020_delta_pd = pd.DataFrame(graph_2020_delta.edges, columns=['srt', 'dest'])
 
     random_edge_samples_pd = pd.DataFrame(random_edge_samples,
                                           columns=['srt', 'dest'])
@@ -99,7 +99,8 @@ if __name__ == '__main__':
                                       graph_2020_delta_1,
                                       graph_2020_delta,
                                       unconnected_vertex_pairs,
-                                      use_case='submit')
+                                      use_case='submit',
+                                      name=args.dataset)
 
     submit_pred = model.predict_proba(submit_features)
 
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    np.save('submit_files/{}_prob'.format(str(wandb.run.name)), submit_pred)
+    np.save('submit_files/{}_{}_prob'.format(str(wandb.run.name), args.dataset), submit_pred)
 
     submit_file = directory + "{}.json".format(str(wandb.run.name))
 
