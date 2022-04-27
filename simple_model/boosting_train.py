@@ -26,7 +26,7 @@ if __name__ == '__main__':
     wandb.config.update(args)
 
     full_dynamic_graph_sparse, unconnected_vertex_pairs, pos_edge, year_start, years_delta, deg_cutoff, minedge = pickle.load(
-        open(args.dataset, "rb"))
+        open("../datasets/"+args.dataset, "rb"))
 
     graph_2020 = graph_year(full_dynamic_graph_sparse, 2020)
     graph_2020_delta = graph_year(full_dynamic_graph_sparse, 2020-years_delta)
@@ -110,9 +110,9 @@ if __name__ == '__main__':
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    np.save('submit_files/{}_{}_prob'.format(str(wandb.run.name), args.dataset), submit_pred)
+    np.save('submit_files/{}_prob'.format(args.dataset), submit_pred)
 
-    submit_file = directory + "{}.json".format(str(wandb.run.name))
+    submit_file = directory + "{}.json".format(args.dataset)
 
     all_idx_list_float = list(map(float, sorted_predictions_eval))
     with open(submit_file, "w", encoding="utf8") as json_file:
