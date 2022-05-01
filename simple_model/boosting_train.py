@@ -26,7 +26,7 @@ if __name__ == '__main__':
     wandb.config.update(args)
 
     full_dynamic_graph_sparse, unconnected_vertex_pairs, pos_edge, year_start, years_delta, deg_cutoff, minedge = pickle.load(
-        open("../datasets/"+args.dataset, "rb"))
+        open("../datasets/"+args.dataset+'.pkl', "rb"))
 
     graph_2020 = graph_year(full_dynamic_graph_sparse, 2020)
     graph_2020_delta = graph_year(full_dynamic_graph_sparse, 2020-years_delta)
