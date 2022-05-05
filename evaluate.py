@@ -74,7 +74,8 @@ if __name__ == '__main__':
                         all_idx = [int(x) for x in all_idx]
 
                     AUC = calculate_ROC(all_idx, np.array(unconnected_vertex_pairs_solution))
-                    print('Area Under Curve for Evaluation: ', AUC, '\n\n\n')
+                    print('data source', data_source, 'AUC', AUC)
+                    #print('Area Under Curve for Evaluation: ', AUC, '\n\n\n')
 
                     with open("logs" + data_source[0:-4] + ".txt", "a") as log_file:
                         log_file.write("---\n")
